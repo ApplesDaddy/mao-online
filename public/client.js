@@ -13,6 +13,7 @@
   let me = null;                 // { playerId, roomId }
   let hostId = null;
   let myHand = [];               // Card[] — full objects, private to this client
+  let localDiscardStack = [];    // up to 3 most recent discards, newest first
   const roster = new Map();      // playerId -> { id, name, count, color }
   const rows = new Map();        // playerId -> { li, countEl, badgeEl } (incremental updates)
   let undoTarget = null;         // { targetId, timer } — active 2s undo window
@@ -108,7 +109,7 @@
 
     els.roomCode.textContent = state.roomId;
     setDeckCount(state.deckCount);
-    renderDiscard(state.topCard);
+    renderDiscardStack(state.discardStack || []);
     renderHand();
 
     // initial roster build (one-time full render)
@@ -170,15 +171,33 @@
     els.deckCount.textContent = n;
   }
 
-  function renderDiscard(card) {
+  // Discard pile: up to 3 cards (newest first) in a slightly messy cascade —
+  // like a real discard pile, each layer peeking out with a small tilt.
+  const DISCARD_LAYERS = [
+    { top: 0, left: 0, deg: 0 },
+    { top: 3, left: 3, deg: 1.5 },
+    { top: 6, left: 6, deg: -2 },
+  ];
+
+  function renderDiscardStack(cards) {
+    localDiscardStack = cards;
     els.discardTop.innerHTML = '';
-    if (card) {
-      els.discardTop.appendChild(makeCardEl(card, false));
-    } else {
+    if (!cards.length) {
       const empty = document.createElement('div');
       empty.className = 'card-empty';
       empty.textContent = 'Empty';
       els.discardTop.appendChild(empty);
+      return;
+    }
+    for (let i = 0; i < cards.length; i++) {
+      const layer = DISCARD_LAYERS[i];
+      const el = makeCardEl(cards[i], false);
+      el.style.position = 'absolute';
+      el.style.top = layer.top + 'px';
+      el.style.left = layer.left + 'px';
+      el.style.transform = 'rotate(' + layer.deg + 'deg)';
+      el.style.zIndex = cards.length - i; // newest on top
+      els.discardTop.appendChild(el);
     }
   }
 
@@ -310,17 +329,17 @@
   });
 
   // ── Game event handlers ───────────────────────────────────────────
-  socket.on('game:dealt', ({ count, deckCount, ownHand }) => {
+  socket.on('game:dealt', ({ count, deckCount, ownHand, discardStack }) => {
     myHand = ownHand;
     renderHand();
     setDeckCount(deckCount);
     for (const id of roster.keys()) updateCount(id, count);
-    renderDiscard(null); // deal resets the table
+    renderDiscardStack(discardStack || []); // deal resets the table; the flipped card starts the pile
     hideUndoToast();
   });
 
   socket.on('card:played', ({ playerId, card, deckCount }) => {
-    renderDiscard(card);
+    renderDiscardStack([card, ...localDiscardStack].slice(0, 3));
     setDeckCount(deckCount);
     if (playerId === me.playerId) {
       myHand = myHand.filter((c) => c.id !== card.id);

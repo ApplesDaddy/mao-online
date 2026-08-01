@@ -241,6 +241,15 @@ button { font-family: inherit; }
   box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
 
+/* Discard pile: sized container for the absolutely-positioned cascade (≤3 cards) */
+#discard-top {
+  position: relative;
+  width: var(--cw);
+  height: var(--ch);
+  margin: 0 auto;
+  overflow: visible;
+}
+
 /* Empty discard placeholder (Phase 5 swaps this in when discard is empty) */
 .card-empty {
   width: var(--cw);

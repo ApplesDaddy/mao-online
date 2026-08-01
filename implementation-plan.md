@@ -222,6 +222,31 @@ Full game screen for the Tanbi Kei theme, using Tailwind CDN + Google Fonts CDN:
 
 ---
 
+### Phase 6 — Deal auto-flip + 3-card discard stack ✅
+
+**Files**: `server.js`, `public/client.js`, `public/style.css`
+
+**What it builds**:
+- `dealGame` auto-flip: after redeal, the top deck card is moved onto the discard pile. Sandbox mode unchanged — no play-blocking invariant.
+- `discardStack` replaces `topCard` in `roomStateFor`, and is added to the personalized `game:dealt` payload: up to 3 most recent discard cards, newest first.
+- Discard pile renders up to 3 cards in a "messy" cascading stack; client tracks the stack locally from `card:played` events between state syncs.
+
+**Sub-tasks**:
+1. Server `dealGame`: after redeal, `const [flipped] = game.deal(room.deck, 1); room.discard.push(flipped);` — before the broadcast; include `discardStack` in each seat's `game:dealt`.
+2. Server `roomStateFor`: `topCard` → `discardStack: room.discard.slice(-3).reverse()`.
+3. Client: `renderDiscard(card)` → `renderDiscardStack(cards)`; empty array → existing `.card-empty` placeholder; otherwise absolute-positioned cascade — offsets (0,0) / (3px,3px) / (6px,6px), rotation 0° / +1.5° / −2°, newest on top (z-index by recency).
+4. Client: `localDiscardStack` — set from `room:joined` / `state:sync` / `game:dealt`; on `card:played` prepend the card and trim to 3.
+5. CSS: `#discard-top { position: relative; width: var(--cw); height: var(--ch); }` (stack container; `.card-empty` keeps its own sizing).
+
+**Testable**:
+Two tabs: host deals 5 → deck count drops by 6 (5 dealt + 1 flipped); discard shows 1 card. Play 2 cards → 3 visible, cascading tilt, newest on top. Deal again → stack resets to the single flipped card. Refresh → stack restored from `state:sync`.
+
+**Done when**: all of the above pass in two tabs, and the empty-discard placeholder no longer appears after a deal.
+
+**As built**: implemented exactly as spec'd above (layers 0/3/6px with 0°/+1.5°/−2°, z-index by recency). Verified live in two browser sessions: deal 5 → deck 249 with Q♦ flipped; stack grows to 3 with cascade + tilt, caps at 3; re-deal resets to the single flipped card (deck 201); refresh restores all 3 from `state:sync`; screenshots on desktop + mobile.
+
+---
+
 ### Phase summary
 
 | Phase | Files | Test driver | Effort |
@@ -231,3 +256,4 @@ Full game screen for the Tanbi Kei theme, using Tailwind CDN + Google Fonts CDN:
 | 3 | `server.js` (game events) | Browser console + 2 tabs | Medium |
 | 4 | `index.html`, `style.css` | Visual in browser + phone | Large |
 | 5 | `client.js` (+ minor `index.html`) | Full gameplay in 3+ tabs + phone | Large |
+| 6 | `server.js`, `client.js`, `style.css` | 2 tabs in browser | Small |

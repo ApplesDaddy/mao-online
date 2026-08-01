@@ -69,7 +69,7 @@ function roomStateFor(room, player) {
     ownHand: player.hand,
     roster: rosterOf(room),
     deckCount: room.deck.length,
-    topCard: room.discard.length ? room.discard[room.discard.length - 1] : null,
+    discardStack: room.discard.slice(-3).reverse(), // up to 3 most recent, newest first
     log: room.log,
   };
 }
@@ -243,9 +243,17 @@ io.on('connection', (socket) => {
     room.deckSerial = room.deck.length / game.CARDS_PER_DECK;
     room.discard = [];
     for (const p of room.players.values()) p.hand = game.deal(room.deck, count);
+    // Auto-flip: the deck's top card starts the discard pile (no play-blocking; sandbox unchanged).
+    const [flipped] = game.deal(room.deck, 1);
+    room.discard.push(flipped);
     // Hands stay private: each connected seat gets its own personalized game:dealt.
     for (const [sid, pid] of room.socketToPlayer) {
-      io.to(sid).emit('game:dealt', { count, deckCount: room.deck.length, ownHand: room.players.get(pid).hand });
+      io.to(sid).emit('game:dealt', {
+        count,
+        deckCount: room.deck.length,
+        ownHand: room.players.get(pid).hand,
+        discardStack: room.discard.slice(-3).reverse(),
+      });
     }
     pushLog(room, 'deal', `Host dealt ${count} cards`);
     console.log(`[${room.id}] dealt ${count} to ${room.players.size} players`);

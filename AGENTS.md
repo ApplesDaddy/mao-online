@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Repo status: complete (all 5 phases done).** Full stack built and verified end-to-end in multi-browser sessions. Manual checks: the 10-point multi-tab checklist in `build-spec.md` §8.
+> **Repo status: complete (all 6 phases done and verified end-to-end in multi-browser sessions).** Manual checks: the 10-point multi-tab checklist in `build-spec.md` §8.
 > - `build-spec.md` — authoritative spec: stack, data model, socket contract, server invariants, UI behavior, tanbi kei theme
 > - `implementation-plan.md` — 5 build phases (deck engine → server rooms → game events → static UI → client wiring), each with its own runnable verification. Build in phase order; don't skip ahead.
 

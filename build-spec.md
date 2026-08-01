@@ -28,21 +28,21 @@ LogEntry { ts, type, text }
 Ranks: `2–10, J, Q, K, A`. Suits: `hearts, clubs, diamonds, spades`.
 
 ## 4. Socket contract
-All game broadcasts → `io.to(room.id)`. **Never send others' hands** — only cardId, counts, top discard, log.
+All game broadcasts → `io.to(room.id)`. **Never send others' hands** — only cardId, counts, discard stack, log.
 
 | Client → Server | Payload | Behavior |
 |---|---|---|
 | `createRoom` | `{name}` | create room, first player = host, join them, emit `room:joined` |
 | `joinRoom` | `{roomId, name}` | room exists + name unique (trimmed, case-insensitive) + **under 50** → `room:joined`; else `room:error {message}` |
 | `rejoinRoom` | `{roomId, playerId}` | rebind socket → seat; restore hand; disconnect old socket if duplicate player id |
-| `dealGame` | `{count: 3\|5}` | **host only**; rebuild deck, clear discard, deal to all; log "Host dealt N cards" |
+| `dealGame` | `{count: 3\|5}` | **host only**; rebuild deck, clear discard, deal to all, flip top card to discard; log "Host dealt N cards" |
 | `playCard` | `{cardId}` | card must be in sender's hand; remove → discard top; broadcast `card:played` |
 | `drawCard` | — | draw 1 from deck → sender's hand; broadcast `card:drawn` |
 | `issuePenalty` | `{targetId}` | target ≠ sender; draw 1 → target's hand; log "X penalised Y (+1 Card)"; broadcast `penalty:issued` |
 | `undoPenalty` | `{targetId}` | reverse — remove 1 from target's hand, add to deck; log "X undid penalty to Y" |
 | `leaveRoom` | — | leave; broadcast; transfer host if host leaves; log "X left" + expire room if empty 5 min |
 
-**Broadcast events**: `room:joined`, `room:error`, `player:joined`, `player:left`, `state:sync`, `game:dealt`, `card:played` `{playerId, card, deckCount}`, `card:drawn` `{playerId, newHandCount, deckCount}`, `penalty:issued` `{fromId, toId, targetNewCount, deckCount}`, `penalty:undone` `{fromId, toId, targetNewCount, deckCount}`, `log:entry`, `host:changed`.
+**Broadcast events**: `room:joined`, `room:error`, `player:joined`, `player:left`, `state:sync`, `game:dealt` `{count, deckCount, ownHand, discardStack}` (personalized per seat), `card:played` `{playerId, card, deckCount}`, `card:drawn` `{playerId, newHandCount, deckCount}`, `penalty:issued` `{fromId, toId, targetNewCount, deckCount}`, `penalty:undone` `{fromId, toId, targetNewCount, deckCount}`, `log:entry`, `host:changed`.
 
 ## 5. Server invariants
 1. **Sandbox**: only validate card-in-hand and target-exists. No turn/rule logic.
@@ -54,9 +54,10 @@ All game broadcasts → `io.to(room.id)`. **Never send others' hands** — only 
 7. **Room empty** for ≥5 min → sweep (check every 60s). Expired room removed regardless of age.
 8. **Room cap**: 50 players. Exceed → `room:error "Room full"`.
 9. **Deck build**: `decks = ceil((players * cardsPerPlayer + 200) / 52)`; merged, shuffled. `+200` buffer for penalties. During play, if deck falls below 20 cards → auto-add one fresh shuffled deck. If deck reaches 0 → reshuffle all of discard into deck; if discard also empty, add a fresh deck alone. Log: "Deck reshuffled".
-10. **Deal resets table**: new deck, clear discard, redeal all.
+10. **Deal resets table**: new deck, clear discard, redeal all, flip top card onto discard.
 11. **Log** capped at 100, newest first.
 12. **Deck count** included in every `card:played`, `card:drawn`, `penalty:issued`, `penalty:undone` broadcast.
+13. **Discard stack**: `room:joined`, `state:sync`, and `game:dealt` carry `discardStack` — up to 3 most recent discard cards, newest first.
 
 ## 6. Client behavior
 
@@ -64,7 +65,7 @@ All game broadcasts → `io.to(room.id)`. **Never send others' hands** — only 
 Name input + room code (Create / Join). Show `room:error` messages inline.
 
 ### Game screen — 4 zones
-1. **Table** (top portrait / center desktop) — deck pile (remaining count) + top discard card.
+1. **Table** (top portrait / center desktop) — deck pile (remaining count) + discard pile: up to 3 most recent cards in a cascading stack, newest on top, slight offset + tilt per layer ("a bit messy", like a real discard pile).
 2. **Hand dock** (bottom) — overlapping fan of own cards: **`<button>` elements**, `aria-label="X of Y"`, decorative suit glyphs `aria-hidden`. Tap/click to play; drag optional.
    - Fan rotation: ±20° when ≤10 cards, linearly compress to ±5° at 20+ cards.
    - Overflow: `max-width: 100%` + `overflow-x: auto` — prevents 20+ cards from breaking mobile.
@@ -96,8 +97,8 @@ Name input + room code (Create / Join). Show `room:error` messages inline.
 ## 8. Verification
 1. `npm start` → 3+ tabs, distinct names. Duplicate name → rejected.
 2. Cap: script 51 joins → 50th succeeds, 51st gets "Room full".
-3. Host deals 5 → counts update; hands private; deck count shows.
-4. Tab A plays card → discard top + feed + count update in all tabs.
+3. Host deals 5 → counts update; hands private; deck count shows; top card flipped to discard.
+4. Tab A plays card → discard stack (up to 3 cards visible) + feed + count update in all tabs.
 5. Tab B penalizes A → A count +1, feed entry, undo toast appears on B only.
 6. Tap undo within 2s → A count -1, card returned.
 7. Refresh tab → seat + hand restored.
