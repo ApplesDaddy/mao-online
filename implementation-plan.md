@@ -38,7 +38,7 @@ console.log('Phase 1 OK');
 
 ---
 
-### Phase 2 — Server skeleton (`server.js`, rooms)
+### Phase 2 — Server skeleton (`server.js`, rooms) ✅
 
 **Files**: `server.js` (new), extends `game.js`
 

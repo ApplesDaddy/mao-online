@@ -1,13 +1,14 @@
 # AGENTS.md
 
-> **Repo status: Phase 1 done.** `package.json` + `game.js` (pure deck engine) exist; `server.js` and `public/` not built yet — `npm start` fails until Phase 2. Build remaining phases per the plan.
+> **Repo status: Phase 2 done.** `server.js` handles rooms/identity/lifecycle; game events (deal/play/draw/penalty) arrive in Phase 3. `public/index.html` is a placeholder — real UI in Phase 4.
 > - `build-spec.md` — authoritative spec: stack, data model, socket contract, server invariants, UI behavior, tanbi kei theme
 > - `implementation-plan.md` — 5 build phases (deck engine → server rooms → game events → static UI → client wiring), each with its own runnable verification. Build in phase order; don't skip ahead.
 
 ## Commands
 
 - `npm install` — already run once; rerun after pulling dep changes
-- `npm start` / `npm run dev` — work only after Phase 2 creates `server.js`; binds `0.0.0.0:3000` (LAN mobile testing is a requirement, keep `0.0.0.0`). `dev` needs nodemon (devDep, or `npx nodemon`)
+- `npm start` — binds `0.0.0.0:3000` (LAN mobile testing is a requirement, keep `0.0.0.0`)
+- `npm run dev` — nodemon auto-restart (devDep, or `npx nodemon`)
 
 ## Architecture (target layout from spec)
 
