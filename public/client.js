@@ -16,12 +16,10 @@
   let localDiscardStack = [];    // up to 3 most recent discards, newest first
   const roster = new Map();      // playerId -> { id, name, count, color }
   const rows = new Map();        // playerId -> { li, countEl, badgeEl } (incremental updates)
-  let undoTarget = null;         // { targetId, timer } — active 2s undo window
   let pendingRejoin = false;     // a rejoinRoom attempt is in flight
 
   const RED_SUITS = new Set(['hearts', 'diamonds']);
   const LOG_CAP = 100;           // mirrors server
-  const UNDO_MS = 2000;
 
   const els = {
     joinScreen: $('join-screen'), gameScreen: $('game-screen'),
@@ -34,7 +32,7 @@
     playersPanel: $('players-panel'), logPanel: $('log-panel'),
     hostControls: $('host-controls'), playerSearch: $('player-search'),
     roster: $('roster'), actionLog: $('action-log'),
-    scrim: $('scrim'), toast: $('toast'),
+    scrim: $('scrim'),
   };
 
   // ── Session persistence (refresh / reconnect restores the seat) ───
@@ -122,7 +120,6 @@
     els.actionLog.scrollTop = 0;
 
     updateHostControls();
-    hideUndoToast();
   }
 
   socket.on('room:joined', enterGame);
@@ -140,7 +137,6 @@
     localDiscardStack = [];
     roster.clear();
     rows.clear();
-    hideUndoToast();
     closeSheets();
     els.joinError.hidden = true;
     els.gameScreen.classList.remove('active');
@@ -302,7 +298,7 @@
 
   function makeLogLi(entry) {
     const li = document.createElement('li');
-    if (entry.type === 'penalty' || entry.type === 'undo') li.className = 'log-penalty';
+    if (entry.type === 'penalty') li.className = 'log-penalty';
     else if (entry.type === 'reshuffle') li.className = 'log-reshuffle';
     const text = document.createElement('span');
     text.className = 'lt';
@@ -320,33 +316,10 @@
     if (nearTop) els.actionLog.scrollTop = 0;
   }
 
-  // ── Penalize + 2s undo toast ──────────────────────────────────────
+  // ── Penalize ──────────────────────────────────────────────────────
   function onPenalize(targetId) {
-    if (undoTarget) { // toast active → a second tap is the undo
-      socket.emit('undoPenalty', { targetId: undoTarget.targetId });
-      hideUndoToast();
-      return;
-    }
     socket.emit('issuePenalty', { targetId });
   }
-
-  function showUndoToast(targetId) {
-    const target = roster.get(targetId);
-    undoTarget = { targetId, timer: setTimeout(hideUndoToast, UNDO_MS) };
-    els.toast.textContent = 'Penalized ' + (target ? target.name : '?') + ' — tap again to undo';
-    els.toast.hidden = false;
-  }
-
-  function hideUndoToast() {
-    if (undoTarget) clearTimeout(undoTarget.timer);
-    undoTarget = null;
-    els.toast.hidden = true;
-  }
-
-  els.toast.addEventListener('click', () => {
-    if (undoTarget) socket.emit('undoPenalty', { targetId: undoTarget.targetId });
-    hideUndoToast();
-  });
 
   // ── Game event handlers ───────────────────────────────────────────
   socket.on('game:dealt', ({ count, deckCount, ownHand, discardStack }) => {
@@ -355,7 +328,6 @@
     setDeckCount(deckCount);
     for (const id of roster.keys()) updateCount(id, count);
     renderDiscardStack(discardStack || []); // deal resets the table; the flipped card starts the pile
-    hideUndoToast();
   });
 
   socket.on('card:played', ({ playerId, card, deckCount }) => {
@@ -384,18 +356,7 @@
   socket.on('penalty:issued', ({ fromId, toId, targetNewCount, deckCount }) => {
     updateCount(toId, targetNewCount);
     setDeckCount(deckCount);
-    if (fromId === me.playerId) showUndoToast(toId); // sender-only undo toast
     // if toId === me, the card arrives via card:received
-  });
-
-  socket.on('penalty:undone', ({ toId, targetNewCount, deckCount }) => {
-    updateCount(toId, targetNewCount);
-    setDeckCount(deckCount);
-    if (toId === me.playerId) { // server popped the last card of my hand
-      myHand.pop();
-      renderHand();
-    }
-    if (undoTarget && undoTarget.targetId === toId) hideUndoToast();
   });
 
   socket.on('player:joined', ({ player }) => {

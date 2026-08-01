@@ -296,17 +296,7 @@ io.on('connection', (socket) => {
     pushLog(room, 'penalty', `${player.name} penalised ${target.name} (+1 Card)`);
   });
 
-  socket.on('undoPenalty', (payload) => {
-    const seat = findSeat(socket);
-    if (!seat) return;
-    const { room, player } = seat;
-    const target = room.players.get(payload && payload.targetId);
-    if (!target || target.hand.length === 0) return;
-    const card = target.hand.pop(); // reverse the draw: last card goes back onto the deck
-    room.deck.push(card);
-    io.to(room.id).emit('penalty:undone', { fromId: player.id, toId: target.id, targetNewCount: target.hand.length, deckCount: room.deck.length });
-    pushLog(room, 'undo', `${player.name} undid penalty to ${target.name}`);
-  });
+
 
   socket.on('disconnect', () => {
     const seat = findSeat(socket);

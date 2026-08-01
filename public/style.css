@@ -499,7 +499,7 @@ button.card:hover { translate: 0 -12px; } /* composes with inline rotate() */
 #action-log li.log-penalty .lt { color: var(--burgundy); font-weight: 600; }
 #action-log li.log-reshuffle .lt { color: var(--ink-soft); font-style: italic; }
 
-/* ── Mobile sheets, scrim, toast ───────────────────────────────────── */
+/* ── Mobile sheets, scrim ──────────────────────────────────────────── */
 
 #sidebar { display: contents; }
 
@@ -530,27 +530,7 @@ button.card:hover { translate: 0 -12px; } /* composes with inline rotate() */
   z-index: 30;
   background: rgba(29,36,51,.45);
 }
-
-#toast {
-  position: fixed;
-  left: 50%;
-  bottom: calc(150px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  z-index: 60;
-  max-width: calc(100vw - 2rem);
-  padding: .6rem 1.15rem;
-  border: 1px solid var(--gold-soft);
-  border-radius: 999px;
-  background: linear-gradient(160deg, #7c1530, #4d0a1d);
-  color: #f9eeda;
-  font-family: Cinzel, serif;
-  font-size: .8rem;
-  letter-spacing: .04em;
-  text-align: center;
-  box-shadow: 0 8px 24px rgba(29,36,51,.4);
-  cursor: pointer;
-}
-#toast[hidden], #scrim[hidden] { display: none; }
+#scrim[hidden] { display: none; }
 
 /* ── Desktop / landscape: persistent sidebar + log column ──────────── */
 

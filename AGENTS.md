@@ -22,7 +22,6 @@
 - `game.createRoom()` does **not** initialize `room.emptySince` or `room.deckSerial`; `server.js` sets both right after calling it (`server.js:178-180`). Any new room-creation path must do the same or the sweeper and card-id uniqueness break.
 - Card `id` is `${deck}-${suit}-${rank}` and must stay globally unique in a room. Resupply decks therefore use `game.buildFreshDeck(++room.deckSerial)` — never reuse a deck number.
 - Deck auto-resupply (`ensureDeckSufficient`) runs **before and after** every single draw in `drawOne`, so `deckCount` in a broadcast can be higher than expected after a reshuffle.
-- `undoPenalty` pops the target's *last* card, not necessarily the penalty card, and pushes it back onto the deck. Intentional simplification.
 - `card:played` broadcasts no hand count — the client decrements the roster locally (`client.js:344`). Don't add a count without updating both sides.
 - Undocumented in `build-spec.md` §4 but load-bearing: `card:received` is a **targeted** emit carrying the actual drawn/penalty card to its owner only, and `game:dealt` is emitted per-socket with that seat's `ownHand`.
 
