@@ -49,16 +49,16 @@
 
       <!-- 1 · Table -->
       <section id="table-zone" aria-label="Table">
-        <span id="room-code" class="room-chip">Room <b>XQKD</b></span>
+        <span id="room-code" class="room-chip">Room <b>····</b></span>
         <div class="pile">
           <button id="deck-pile" type="button" aria-label="Draw a card">
             <span class="card card-back" aria-hidden="true"></span>
-            <span id="deck-count" class="deck-count">244</span>
+            <span id="deck-count" class="deck-count">–</span>
           </button>
           <span class="pile-label">Deck</span>
         </div>
         <div class="pile">
-          <div id="discard-top"><!-- mock top discard injected --></div>
+          <div id="discard-top"><!-- top discard rendered by client.js --></div>
           <span class="pile-label">Discard</span>
         </div>
       </section>
@@ -71,7 +71,7 @@
 
       <!-- 2 · Hand dock -->
       <section id="hand-dock" aria-label="Your hand">
-        <div id="hand-fan"><!-- mock cards injected --></div>
+        <div id="hand-fan"><!-- hand rendered by client.js --></div>
       </section>
     </main>
 
@@ -84,8 +84,8 @@
         </header>
         <div id="host-controls">
           <span class="host-tag">Host</span>
-          <button class="btn-gold deal" type="button">Deal 3</button>
-          <button class="btn-gold deal" type="button">Deal 5</button>
+          <button class="btn-gold deal" type="button" data-count="3">Deal 3</button>
+          <button class="btn-gold deal" type="button" data-count="5">Deal 5</button>
         </div>
         <input id="player-search" type="search" placeholder="Search players…" aria-label="Search players">
         <ul id="roster"><!-- mock rows injected --></ul>
@@ -97,17 +97,7 @@
           <h2>Action</h2>
           <button class="sheet-close" data-close type="button" aria-label="Close log panel">×</button>
         </header>
-        <ul id="action-log" aria-live="polite">
-          <li><span class="lt">Bob drew a card</span><time>12:04</time></li>
-          <li><span class="lt">Alice played Q of spades</span><time>12:04</time></li>
-          <li class="log-penalty"><span class="lt">Bob penalised Alice (+1 Card)</span><time>12:03</time></li>
-          <li><span class="lt">Host dealt 5 cards</span><time>12:03</time></li>
-          <li><span class="lt">Beatrice drew a card</span><time>12:02</time></li>
-          <li><span class="lt">Alice played 7 of hearts</span><time>12:02</time></li>
-          <li class="log-penalty"><span class="lt">Thaddeus penalised Ophelia (+1 Card)</span><time>12:01</time></li>
-          <li class="log-reshuffle"><span class="lt">Deck reshuffled</span><time>12:01</time></li>
-          <li><span class="lt">Host dealt 3 cards</span><time>12:00</time></li>
-        </ul>
+        <ul id="action-log" aria-live="polite"><!-- entries rendered by client.js --></ul>
       </aside>
     </div>
 
@@ -115,107 +105,7 @@
     <div id="toast" role="status" hidden></div>
   </div>
 
-  <script>
-  /* ── MOCK DATA + INTERACTIONS: Phase 4 visual validation only ──────────────
-     Phase 5 removes this block and wires real sockets in public/client.js.   */
-  (function () {
-    const $ = (id) => document.getElementById(id);
-
-    /* Join → game screen toggle, with inline error display */
-    const joinScreen = $('join-screen'), gameScreen = $('game-screen'), joinError = $('join-error');
-    function showError(msg) { joinError.textContent = msg; joinError.hidden = false; }
-    function tryEnter(needRoom) {
-      if (!$('join-name').value.trim()) return showError('Please enter your name.');
-      if (needRoom && !$('join-room').value.trim()) return showError('Please enter a room code.');
-      joinError.hidden = true;
-      joinScreen.classList.add('screen-off');
-      gameScreen.classList.add('active');
-    }
-    $('btn-create').addEventListener('click', () => tryEnter(false));
-    $('btn-join').addEventListener('click', () => tryEnter(true));
-
-    /* Cards — button elements, aria-label "X of Y", decorative glyphs aria-hidden */
-    const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
-    const SUITS = [ ['hearts','♥',true], ['clubs','♣',false], ['diamonds','♦',true], ['spades','♠',false] ];
-    function makeCard(rank, suit, glyph, red, asButton) {
-      const el = document.createElement(asButton ? 'button' : 'div');
-      el.className = 'card ' + (red ? 'red' : 'black');
-      if (asButton) { el.type = 'button'; el.setAttribute('aria-label', rank + ' of ' + suit); }
-      el.innerHTML =
-        '<span class="idx idx-tl" aria-hidden="true">' + rank + '<br>' + glyph + '</span>' +
-        '<span class="pip" aria-hidden="true">' + glyph + '</span>' +
-        '<span class="idx idx-br" aria-hidden="true">' + rank + '<br>' + glyph + '</span>';
-      return el;
-    }
-
-    /* Hand dock — 25 mock cards: proves fan compression (±5°) + overflow scroll.
-       layoutFan implements the spec rule: ±20° at ≤10 cards → ±5° at 20+. */
-    const fan = $('hand-fan');
-    for (let i = 0; i < 25; i++) {
-      const [suit, glyph, red] = SUITS[i % 4];
-      fan.appendChild(makeCard(RANKS[i % 13], suit, glyph, red, true));
-    }
-    layoutFan(fan);
-    function layoutFan(container) {
-      const cards = container.children, n = cards.length;
-      const maxAngle = n <= 10 ? 20 : Math.max(5, 20 - (n - 10) * 1.5);
-      for (let i = 0; i < n; i++) {
-        const t = n === 1 ? 0.5 : i / (n - 1);
-        cards[i].style.transform = 'rotate(' + (-maxAngle + 2 * maxAngle * t).toFixed(2) + 'deg)';
-        if (i > 0) cards[i].style.marginLeft = 'var(--overlap)';
-      }
-    }
-
-    /* Top discard (mock) */
-    $('discard-top').appendChild(makeCard('Q', 'spades', '♠', false, false));
-
-    /* Players roster (mock) — self row hides Penalize; first row carries Host badge */
-    const PALETTE = ['#8a1538','#1f5c4d','#1d3461','#8f6b1f','#5b2a86','#0f6b6b','#7a3b12','#4a6741','#6b1f2a','#2f4b7c','#8c5e10','#5e2b4d','#3d5a45','#713f12','#37415c','#7c2d4e'];
-    const NAMES = ['Alice','You','Beatrice','Cassius','Delphine','Evander','Florence','Gideon','Henrietta','Ignatius','Josephine','Lysander','Ophelia','Percival','Rosalind','Thaddeus'];
-    const roster = $('roster');
-    NAMES.forEach((name, i) => {
-      const li = document.createElement('li');
-      li.className = 'roster-row' + (name === 'You' ? ' is-self' : '');
-      li.innerHTML =
-        '<span class="dot" style="--c:' + PALETTE[i % PALETTE.length] + '" aria-hidden="true"></span>' +
-        '<span class="rname">' + name + (i === 0 ? ' <span class="host-badge">Host</span>' : '') + '</span>' +
-        '<span class="count-badge">' + (3 + (i % 7)) + '</span>' +
-        '<button class="btn-penalize" type="button">Penalize</button>';
-      li.querySelector('.btn-penalize').addEventListener('click', () => showToast(name));
-      roster.appendChild(li);
-    });
-
-    /* Roster search filter (client-side substring) */
-    $('player-search').addEventListener('input', (e) => {
-      const q = e.target.value.trim().toLowerCase();
-      for (const row of roster.children) {
-        row.style.display = row.querySelector('.rname').textContent.toLowerCase().includes(q) ? '' : 'none';
-      }
-    });
-
-    /* Mobile bottom sheets + scrim */
-    const scrim = $('scrim');
-    function openSheet(id) { $(id).classList.add('open'); scrim.hidden = false; }
-    function closeSheets() {
-      for (const p of document.querySelectorAll('.panel.open')) p.classList.remove('open');
-      scrim.hidden = true;
-    }
-    $('open-players').addEventListener('click', () => openSheet('players-panel'));
-    $('open-log').addEventListener('click', () => openSheet('log-panel'));
-    scrim.addEventListener('click', closeSheets);
-    for (const b of document.querySelectorAll('[data-close]')) b.addEventListener('click', closeSheets);
-
-    /* Penalize undo toast (mock demo of the 2s undo window) */
-    const toast = $('toast');
-    let toastTimer;
-    function showToast(name) {
-      toast.textContent = 'Penalized ' + name + ' — tap again to undo';
-      toast.hidden = false;
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { toast.hidden = true; }, 2000);
-    }
-    toast.addEventListener('click', () => { clearTimeout(toastTimer); toast.hidden = true; });
-  })();
-  </script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>

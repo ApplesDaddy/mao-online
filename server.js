@@ -64,6 +64,7 @@ function roomStateFor(room, player) {
   return {
     playerId: player.id,
     roomId: room.id,
+    hostId: room.hostId,
     isHost: room.hostId === player.id,
     ownHand: player.hand,
     roster: rosterOf(room),

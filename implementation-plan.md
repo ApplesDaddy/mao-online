@@ -128,7 +128,7 @@ Cross-tab: Tab A deals, Tab B sees the deal. Tab A plays a card, Tab B sees it a
 
 ---
 
-### Phase 4 — Static UI (`index.html`, `style.css`)
+### Phase 4 — Static UI (`index.html`, `style.css`) ✅
 
 **Files**: `public/index.html`, `public/style.css` (new)
 
@@ -167,9 +167,15 @@ Full game screen for the Tanbi Kei theme, using Tailwind CDN + Google Fonts CDN:
 
 **Done when**: static layout passes visual validation across desktop + mobile, with tanbi kei palette and type, and mock cards/roster/log all render.
 
+**As built — element contract for Phase 5**:
+- Ids: `join-screen`, `join-name`, `join-room`, `join-error`, `btn-create`, `btn-join`, `game-screen`, `room-code`, `deck-pile`, `deck-count`, `discard-top`, `hand-fan`, `sheet-buttons`, `open-players`, `open-log`, `players-panel`, `log-panel`, `host-controls`, `player-search`, `roster`, `action-log`, `scrim`, `toast`.
+- Screen toggle: `.screen-off` on join screen, `.active` on game screen. Sheets toggle `.open`; `#toast` uses the `hidden` attr.
+- CSS hooks ready for client: `.card-empty` (empty discard placeholder), `.is-self` roster row, `.log-penalty` / `.log-reshuffle` entry classes, `--overlap`/`--cw`/`--ch` card vars (larger at ≥769px).
+- Verified by screenshots: join/game on desktop + mobile, error display, sheets, search filter, undo toast, a11y tree (cards are `<button aria-label="X of Y">`).
+
 ---
 
-### Phase 5 — Client wiring (`client.js`)
+### Phase 5 — Client wiring (`client.js`) ✅
 
 **Files**: `public/client.js` (new), modifies `index.html` slightly
 
@@ -206,6 +212,13 @@ Full game screen for the Tanbi Kei theme, using Tailwind CDN + Google Fonts CDN:
 9. 50 tabs join → 51st rejected
 
 **Done when**: all 9 verification items pass.
+
+**As built — decisions not spelled out above**:
+- `roomStateFor` (server) now also sends `hostId` — client needs it for roster host badges, not just `isHost`.
+- `card:played` payload has no hand count (spec) — other clients derive the player's −1 locally.
+- Reconnect: one `connect` handler re-emits `rejoinRoom` whenever sessionStorage holds a seat — covers refresh, tab crash, and socket.io auto-reconnect with the same code path.
+- Verified live with two automated browser sessions: create/join, private dealt hands, play (discard + counts everywhere), draw, penalty (target gets card, sender-only toast), undo via toast tap, refresh → seat/hand/log restored, re-deal resets table + empty-discard placeholder, host-only deal controls, mobile sheets/fan.
+- Note: host transfer on leave fires only after the 30-min disconnect grace (by design) — verify with a shortened `GRACE_MS` if needed.
 
 ---
 

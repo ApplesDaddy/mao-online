@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Repo status: Phase 3 done.** `server.js` is complete server-side (rooms/identity/lifecycle + deal/play/draw/penalty events). `public/index.html` is a placeholder — real UI in Phase 4, socket wiring in Phase 5.
+> **Repo status: complete (all 5 phases done).** Full stack built and verified end-to-end in multi-browser sessions. Manual checks: the 10-point multi-tab checklist in `build-spec.md` §8.
 > - `build-spec.md` — authoritative spec: stack, data model, socket contract, server invariants, UI behavior, tanbi kei theme
 > - `implementation-plan.md` — 5 build phases (deck engine → server rooms → game events → static UI → client wiring), each with its own runnable verification. Build in phase order; don't skip ahead.
 
@@ -10,7 +10,7 @@
 - `npm start` — binds `0.0.0.0:3000` (LAN mobile testing is a requirement, keep `0.0.0.0`)
 - `npm run dev` — nodemon auto-restart (devDep, or `npx nodemon`)
 
-## Architecture (target layout from spec)
+## Architecture
 
 - `server.js` — Express + Socket.io bootstrap, room lifecycle, all socket events
 - `game.js` — pure deck/shuffle/deal logic + room factory, no I/O
@@ -18,6 +18,7 @@
 - `public/style.css` — tanbi kei theme
 - `public/client.js` — socket wiring + imperative DOM rendering
 - No build step, no bundler, no framework — spec forbids them.
+- Socket contract refinements (recorded in `implementation-plan.md` Phase 3/5 as-built notes): `game:dealt` is personalized per seat; `card:received` is a targeted event carrying the drawn/penalty card to its owner only; state payload includes `hostId`.
 
 ## Intentional design — do NOT "fix"
 
