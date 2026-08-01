@@ -5,7 +5,7 @@ const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 const SUIT_GLYPHS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' }; // ♥♦ red, ♣♠ black
 
 const CARDS_PER_DECK = 52;
-const PENALTY_BUFFER = 200; // extra cards merged in for penalties (build-spec §5.9)
+const MAX_PENALTY_BUFFER = 200; // upper bound on penalty extras — scaled down for small rooms
 const MAX_DEAL = 5; // dealGame count is 3|5 — size the initial room deck for the max
 
 // Fisher-Yates shuffle. Mutates and returns the same array.
@@ -30,10 +30,13 @@ function buildFreshDeck(deckNumber) {
 }
 
 // Build a shuffled Card[] from merged 52-card decks.
-// decks = ceil((players * cardsPerPlayer + 200) / 52)
+// decks = ceil((players * cardsPerPlayer + buffer) / 52).
+// buffer scales with players to avoid enormous decks for small rooms
+// (a 2-player game shouldn't carry 4 decks), floored at 52, capped at 200.
 // Card: { id: `${deck}-${suit}-${rank}`, rank, suit, deck } — id unique per physical card instance.
 function buildDeck(playerCount, cardsPerPlayer) {
-  const deckCount = Math.ceil((playerCount * cardsPerPlayer + PENALTY_BUFFER) / CARDS_PER_DECK);
+  const buffer = Math.min(MAX_PENALTY_BUFFER, Math.max(CARDS_PER_DECK, playerCount * cardsPerPlayer * 3));
+  const deckCount = Math.ceil((playerCount * cardsPerPlayer + buffer) / CARDS_PER_DECK);
   let cards = [];
   for (let d = 1; d <= deckCount; d++) cards = cards.concat(buildFreshDeck(d));
   return shuffle(cards);
