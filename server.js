@@ -8,7 +8,7 @@ const { Server } = require('socket.io');
 const game = require('./game');
 
 const HOST = '0.0.0.0'; // required for LAN mobile testing
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const MAX_PLAYERS = 50;
 const GRACE_MS = 30 * 60 * 1000; // reconnect grace after disconnect
