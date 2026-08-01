@@ -84,7 +84,7 @@ Close second tab → first tab's console (if wired) sees `player:left`.
 
 ---
 
-### Phase 3 — Full server game logic
+### Phase 3 — Full server game logic ✅
 
 **Files**: `server.js` (extended)
 
@@ -119,6 +119,12 @@ socket.emit('undoPenalty', {targetId: '<player2 id>'});
 Cross-tab: Tab A deals, Tab B sees the deal. Tab A plays a card, Tab B sees it appear as top discard and feed entry. Tab B draws, Tab A sees B's count change.
 
 **Done when**: every event triggers its broadcast in a second tab, deck auto-resupplies below 20, and log is populated.
+
+**As built — contract refinements Phase 5 must honor**:
+- `game:dealt` is personalized per seat: `{ count, deckCount, ownHand }` (keeps hands private; not a plain room broadcast).
+- `card:received {card}` — targeted event to the drawer / penalty target only (broadcasts carry counts, never the card).
+- On `penalty:undone` with `toId === me`: pop the last card of own hand (server pops last).
+- Log strings as built: `Host dealt N cards`, `X played R of S`, `X drew a card`, `X penalised Y (+1 Card)`, `X undid penalty to Y`, `Deck reshuffled`.
 
 ---
 

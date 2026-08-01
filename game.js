@@ -17,19 +17,25 @@ function shuffle(array) {
   return array;
 }
 
+// One fresh shuffled 52-card deck. deckNumber keeps card ids unique per instance —
+// resupply decks must never reuse numbers already in play.
+function buildFreshDeck(deckNumber) {
+  const cards = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) {
+      cards.push({ id: `${deckNumber}-${suit}-${rank}`, rank, suit, deck: deckNumber });
+    }
+  }
+  return shuffle(cards);
+}
+
 // Build a shuffled Card[] from merged 52-card decks.
 // decks = ceil((players * cardsPerPlayer + 200) / 52)
 // Card: { id: `${deck}-${suit}-${rank}`, rank, suit, deck } — id unique per physical card instance.
 function buildDeck(playerCount, cardsPerPlayer) {
   const deckCount = Math.ceil((playerCount * cardsPerPlayer + PENALTY_BUFFER) / CARDS_PER_DECK);
-  const cards = [];
-  for (let d = 1; d <= deckCount; d++) {
-    for (const suit of SUITS) {
-      for (const rank of RANKS) {
-        cards.push({ id: `${d}-${suit}-${rank}`, rank, suit, deck: d });
-      }
-    }
-  }
+  let cards = [];
+  for (let d = 1; d <= deckCount; d++) cards = cards.concat(buildFreshDeck(d));
   return shuffle(cards);
 }
 
@@ -53,4 +59,4 @@ function createRoom(id, playerCount) {
   };
 }
 
-module.exports = { SUITS, RANKS, SUIT_GLYPHS, shuffle, buildDeck, deal, createRoom };
+module.exports = { SUITS, RANKS, SUIT_GLYPHS, CARDS_PER_DECK, shuffle, buildDeck, buildFreshDeck, deal, createRoom };

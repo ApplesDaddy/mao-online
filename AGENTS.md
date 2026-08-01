@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Repo status: Phase 2 done.** `server.js` handles rooms/identity/lifecycle; game events (deal/play/draw/penalty) arrive in Phase 3. `public/index.html` is a placeholder — real UI in Phase 4.
+> **Repo status: Phase 3 done.** `server.js` is complete server-side (rooms/identity/lifecycle + deal/play/draw/penalty events). `public/index.html` is a placeholder — real UI in Phase 4, socket wiring in Phase 5.
 > - `build-spec.md` — authoritative spec: stack, data model, socket contract, server invariants, UI behavior, tanbi kei theme
 > - `implementation-plan.md` — 5 build phases (deck engine → server rooms → game events → static UI → client wiring), each with its own runnable verification. Build in phase order; don't skip ahead.
 
