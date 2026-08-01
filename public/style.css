@@ -202,6 +202,27 @@ button { font-family: inherit; }
 }
 .room-chip b { color: var(--ivory-hi); letter-spacing: .3em; }
 
+/* Leave — quiet ghost on the felt; Penalize stays the loudest button */
+#btn-leave {
+  position: absolute;
+  top: .6rem;
+  right: 1.1rem;
+  z-index: 1;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid var(--gold-faint);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--gold-soft);
+  font-family: Cinzel, serif;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+#btn-leave:hover { border-color: var(--gold-soft); color: var(--ivory-hi); }
+
 .pile { text-align: center; }
 .pile-label {
   display: block;

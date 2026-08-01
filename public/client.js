@@ -27,7 +27,7 @@
     joinScreen: $('join-screen'), gameScreen: $('game-screen'),
     joinName: $('join-name'), joinRoom: $('join-room'), joinError: $('join-error'),
     btnCreate: $('btn-create'), btnJoin: $('btn-join'),
-    roomCode: $('room-code').querySelector('b'),
+    roomCode: $('room-code').querySelector('b'), btnLeave: $('btn-leave'),
     deckPile: $('deck-pile'), deckCount: $('deck-count'), discardTop: $('discard-top'),
     handFan: $('hand-fan'),
     openPlayers: $('open-players'), openLog: $('open-log'),
@@ -127,6 +127,30 @@
 
   socket.on('room:joined', enterGame);
   socket.on('state:sync', enterGame);
+
+  // ── Leaving (teardown counterpart to enterGame) ───────────────────
+  // Leaving destroys the seat for good (no 30-min grace like a disconnect),
+  // so confirm — mirroring the beforeunload guard for accidental exits.
+  function leaveGame() {
+    socket.emit('leaveRoom');
+    clearSession();          // stop the reconnect handler rejoining this seat
+    me = null;               // disarms the beforeunload guard
+    hostId = null;
+    myHand = [];
+    localDiscardStack = [];
+    roster.clear();
+    rows.clear();
+    hideUndoToast();
+    closeSheets();
+    els.joinError.hidden = true;
+    els.gameScreen.classList.remove('active');
+    els.joinScreen.classList.remove('screen-off');
+    document.title = 'Mao Online';
+  }
+
+  els.btnLeave.addEventListener('click', () => {
+    if (window.confirm('Leave the room? Your seat and hand will be lost.')) leaveGame();
+  });
 
   // ── Cards & hand fan ──────────────────────────────────────────────
   function makeCardEl(card, asButton) {
