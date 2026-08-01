@@ -19,7 +19,6 @@
   let undoTarget = null;         // { targetId, timer } — active 2s undo window
   let pendingRejoin = false;     // a rejoinRoom attempt is in flight
 
-  const SUIT_GLYPHS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
   const RED_SUITS = new Set(['hearts', 'diamonds']);
   const LOG_CAP = 100;           // mirrors server
   const UNDO_MS = 2000;
@@ -132,17 +131,13 @@
   // ── Cards & hand fan ──────────────────────────────────────────────
   function makeCardEl(card, asButton) {
     const el = document.createElement(asButton ? 'button' : 'div');
-    const glyph = SUIT_GLYPHS[card.suit];
     el.className = 'card ' + (RED_SUITS.has(card.suit) ? 'red' : 'black');
     if (asButton) {
       el.type = 'button';
-      el.setAttribute('aria-label', card.rank + ' of ' + card.suit);
+      el.setAttribute('aria-label', MaoCards.label(card));
       el.addEventListener('click', () => socket.emit('playCard', { cardId: card.id }));
     }
-    el.innerHTML =
-      '<span class="idx idx-tl" aria-hidden="true">' + card.rank + '<br>' + glyph + '</span>' +
-      '<span class="pip" aria-hidden="true">' + glyph + '</span>' +
-      '<span class="idx idx-br" aria-hidden="true">' + card.rank + '<br>' + glyph + '</span>';
+    el.innerHTML = MaoCards.faceSVG(card); // real-deck face art (see cards.js)
     return el;
   }
 

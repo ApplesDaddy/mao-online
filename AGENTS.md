@@ -1,34 +1,47 @@
 # AGENTS.md
 
-> **Repo status: complete (all 6 phases done and verified end-to-end in multi-browser sessions).** Manual checks: the 10-point multi-tab checklist in `build-spec.md` §8.
-> - `build-spec.md` — authoritative spec: stack, data model, socket contract, server invariants, UI behavior, tanbi kei theme
-> - `implementation-plan.md` — 5 build phases (deck engine → server rooms → game events → static UI → client wiring), each with its own runnable verification. Build in phase order; don't skip ahead.
+> **Repo status: complete — all 7 phases built and verified end-to-end in multi-browser sessions.**
+> - `build-spec.md` — authoritative spec: stack, data model, socket contract, server invariants, UI behavior, tanbi kei theme. §8 holds the 10-point multi-tab verification checklist.
+> - `implementation-plan.md` — the phases (deck engine → server rooms → game events → static UI → client wiring → deal auto-flip + 3-card discard stack → real-deck card faces), each with an "As built" note recording where the code diverged from the spec. Read those notes before trusting the spec tables.
 
 ## Commands
 
-- `npm install` — already run once; rerun after pulling dep changes
-- `npm start` — binds `0.0.0.0:3000` (LAN mobile testing is a requirement, keep `0.0.0.0`)
-- `npm run dev` — nodemon auto-restart (devDep, or `npx nodemon`)
+- `npm start` — `node server.js`, binds `0.0.0.0:3000` (LAN mobile testing is a requirement — keep `0.0.0.0`, keep port 3000)
+- `npm run dev` — nodemon auto-restart
+- No lint, format, typecheck, test, or CI setup exists. Verification is manual only (see below).
 
 ## Architecture
 
-- `server.js` — Express + Socket.io bootstrap, room lifecycle, all socket events
-- `game.js` — pure deck/shuffle/deal logic + room factory, no I/O
-- `public/index.html` — join screen + game screen (Tailwind CDN + Google Fonts CDN)
-- `public/style.css` — tanbi kei theme
-- `public/client.js` — socket wiring + imperative DOM rendering
-- No build step, no bundler, no framework — spec forbids them.
-- Socket contract refinements (recorded in `implementation-plan.md` Phase 3/5 as-built notes): `game:dealt` is personalized per seat; `card:received` is a targeted event carrying the drawn/penalty card to its owner only; state payload includes `hostId`.
+- `server.js` — Express 5 + Socket.io bootstrap, room lifecycle, every socket handler, room sweeper. All state is in-process `Map`s; restarting the server destroys all rooms.
+- `game.js` — pure deck/shuffle/deal + `createRoom` factory. No I/O.
+- `public/index.html` / `style.css` / `client.js` / `cards.js` — served statically; no build step, no bundler, no framework (spec forbids them). `cards.js` must load before `client.js` (it defines the `MaoCards` global).
+- `index.html` loads the Tailwind CDN script but **no Tailwind utility classes are actually used** — 100% of styling is hand-written `style.css` classes + CSS custom properties. `build-spec.md` §1 and Phase 4 claim otherwise; they are stale. Match the existing class-based style rather than adding utilities.
+
+## Server gotchas
+
+- `game.createRoom()` does **not** initialize `room.emptySince` or `room.deckSerial`; `server.js` sets both right after calling it (`server.js:178-180`). Any new room-creation path must do the same or the sweeper and card-id uniqueness break.
+- Card `id` is `${deck}-${suit}-${rank}` and must stay globally unique in a room. Resupply decks therefore use `game.buildFreshDeck(++room.deckSerial)` — never reuse a deck number.
+- Deck auto-resupply (`ensureDeckSufficient`) runs **before and after** every single draw in `drawOne`, so `deckCount` in a broadcast can be higher than expected after a reshuffle.
+- `undoPenalty` pops the target's *last* card, not necessarily the penalty card, and pushes it back onto the deck. Intentional simplification.
+- `card:played` broadcasts no hand count — the client decrements the roster locally (`client.js:348`). Don't add a count without updating both sides.
+- Undocumented in `build-spec.md` §4 but load-bearing: `card:received` is a **targeted** emit carrying the actual drawn/penalty card to its owner only, and `game:dealt` is emitted per-socket with that seat's `ownHand`.
 
 ## Intentional design — do NOT "fix"
 
-- **Sandbox mode**: server is a physical card table. It enforces zero Mao rules or turns — only card-in-hand and target-exists checks. Humans penalize each other via `issuePenalty`. Never add rule/turn logic.
-- **Never broadcast other players' hands** — only cardIds, counts, top discard, log.
-- **No automated tests** (explicitly out of scope) — verify manually: per-phase checks in `implementation-plan.md`, plus the 10-point multi-tab checklist in `build-spec.md` §8.
+- **Sandbox mode**: the server is a physical card table. Zero Mao rules, zero turn order — the only validations are card-in-hand and target-exists. Humans police each other via `issuePenalty`. Never add rule or turn logic.
+- **Never send another player's hand.** Broadcasts carry ids, names, counts, colors, the discard stack, and the log — nothing else.
+- **No automated tests** (explicitly out of scope in `build-spec.md` §10). Verify with the per-phase checks in `implementation-plan.md` plus `build-spec.md` §8.
 
-## Conventions
+## Client conventions
 
-- Cards are `<button>` elements with `aria-label="X of Y"`; suit glyphs `♥` `♦` (red), `♣` `♠` (black); decorative glyphs `aria-hidden`
-- Roster/log rendering: incremental row updates, never full rebuild (rooms support 50 players)
-- Client persists `mao_playerId` / `mao_roomId` in sessionStorage for reconnect; `beforeunload` leave-prompt required
-- Google Fonts CDN requires `font-display: swap` + preconnect links (googleapis + gstatic)
+- Card faces are inline SVG generated by `cards.js` (`MaoCards.faceSVG`) in a `100×140` user space, all art `aria-hidden`; playable cards are `<button aria-label="Queen of Hearts">` (`MaoCards.label`). Suit-coloured shapes must use `currentColor` — `.card.red` / `.card.black` is what makes `♥ ♦` wine and `♣ ♠` ink.
+- All reusable art (pips, the three court figures, clip path, hatch pattern) lives in ONE hidden `<svg>` sprite injected on first render; card faces only carry `<use>` references. Add new art to the sprite, not per card.
+- The sprite palette is duplicated as JS constants at the top of `cards.js` because SVG presentation attributes can't reliably read `var(--…)` on iOS Safari — theme changes need editing both files.
+- Roster and log update incrementally (`rows` Map, `prependLog`) — never full rebuilds; rooms hold up to 50 players. The only full renders are `enterGame` and `renderHand`.
+- `room:joined` and `state:sync` share one handler (`enterGame`), which is how refresh/reconnect restores a seat from the `mao_playerId` / `mao_roomId` sessionStorage pair.
+- A `beforeunload` guard is required by spec §6 — expect a confirm dialog when navigating away or closing a tab, including in browser automation.
+- Google Fonts CDN needs the two preconnect links + `display=swap` in the font URL.
+
+## Verifying card art
+
+Fastest loop: open the app (join screen is enough — `MaoCards` is global there), then from the console/`eval` build a grid of `MaoCards.faceSVG({rank, suit})` for all 52 cards inside `div.card` wrappers, and a second row with `--cw`/`--ch` overridden to ~290px to inspect court detail. Only after that go through deal → play → draw in the real UI, at 1280px and 390px widths.

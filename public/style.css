@@ -268,21 +268,27 @@ button { font-family: inherit; }
 
 /* ── 2 · Cards & hand dock ─────────────────────────────────────────── */
 
+/* Card stock: near-white face, thin edge, faint linen weave. The face art
+   itself (pips, court figures, indices) is inline SVG from cards.js. */
 .card {
   position: relative;
   width: var(--cw);
   height: var(--ch);
   flex: 0 0 auto;
   padding: 0;
-  border: 1px solid var(--gold-soft);
-  border-radius: 6px;
+  overflow: hidden; /* clips the face art to the rounded corners */
+  border: 1px solid rgba(160, 125, 28, .5);
+  border-radius: 7px;
   background:
-    radial-gradient(circle at 30% 20%, rgba(255,255,255,.5), transparent 50%),
-    linear-gradient(165deg, var(--ivory-hi), #efe4c8);
+    repeating-linear-gradient(0deg, rgba(29,36,51,.016) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(29,36,51,.016) 0 1px, transparent 1px 4px),
+    radial-gradient(120% 90% at 28% 12%, rgba(255,255,255,.8), transparent 60%),
+    linear-gradient(165deg, #fdfaf1, #f4ecd9);
   box-shadow:
-    inset 0 0 0 3px var(--ivory-hi),
-    inset 0 0 0 4px var(--gold-soft),
-    0 2px 5px rgba(20,25,40,.28);
+    inset 0 0 0 1px rgba(255,255,255,.85),
+    inset 0 -7px 12px rgba(160,125,28,.07),
+    0 1px 1px rgba(20,25,40,.18),
+    0 3px 7px rgba(20,25,40,.22);
   font-family: Cinzel, serif;
   transform-origin: 50% 115%;
   transition: translate .16s ease;
@@ -292,10 +298,9 @@ button.card:hover { translate: 0 -12px; } /* composes with inline rotate() */
 .card.red { color: var(--wine); }
 .card.black { color: var(--ink); }
 
-.card .idx { position: absolute; font-size: .78rem; font-weight: 600; line-height: 1.05; text-align: center; }
-.card .idx-tl { top: 5px; left: 6px; }
-.card .idx-br { bottom: 5px; right: 6px; transform: rotate(180deg); }
-.card .pip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.9rem; }
+/* Face art fills the card; 100×140 user space is stretched to --cw/--ch. */
+.card-face { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.card-face .idx { font-family: Cinzel, serif; font-weight: 600; }
 
 #hand-dock {
   flex: 0 0 auto;

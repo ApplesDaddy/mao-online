@@ -247,6 +247,26 @@ Two tabs: host deals 5 → deck count drops by 6 (5 dealt + 1 flipped); discard 
 
 ---
 
+### Phase 7 — Real-deck card faces (`public/cards.js`) ✅
+
+**Files**: `public/cards.js` (new), `public/index.html`, `public/client.js`, `public/style.css`
+
+**What it builds**: replaces the placeholder face (rank + one oversized centre glyph) with real playing-card anatomy.
+- New `public/cards.js` exposes `window.MaoCards.faceSVG(card)` / `.label(card)` and injects one hidden `<svg>` sprite of reusable art. Loaded before `client.js`; still no build step.
+- Faces are inline SVG in a `100×140` user space (`preserveAspectRatio="none"`, so it stretches to `--cw`/`--ch`).
+- Diagonal corner indices: rank + suit pip top-left, the same group `rotate(180 50 70)`'d for the inverted bottom-right index.
+- Standard pip layouts for 2–10 (columns at 31/50/69, rows symmetric about y=70; 9/10 run four pips per column), every pip below the centre line rotated 180°. Aces get one oversized pip, spades also a gold flourish.
+- J/Q/K are double-headed: the upper-half figure is drawn once in the sprite and `<use>`d twice (second copy rotated 180°), clipped to a framed panel with a dividing rule and an in-frame suit pip.
+- Suit-coloured shapes use `currentColor`, so `.card.red` / `.card.black` still drive colour; robes carry a diagonal hatch pattern for engraved shading.
+- `aria-label` upgraded from `"Q of hearts"` to `"Queen of Hearts"`; all art `aria-hidden`.
+- `.card` restyled as card stock (near-white face, thin edge, faint linen grain, `overflow: hidden`); the old `.idx` / `.pip` CSS is gone.
+
+**Testable**: render all 52 faces in a grid — pip counts and positions match a real deck, lower pips inverted, courts mirrored. Then in-app: deal, play, draw, and check the discard cascade at desktop and 390px widths.
+
+**As built**: as spec'd. Verified by rendering the full 52 in a preview grid plus 290px-wide court/ace blowups, then live: deal 5 → hand of `5♦ 5♠ A♥ 10♠` with correct layouts, three plays cascading in the discard, `aria-label`s reading "Ten of Spades", one sprite in the DOM, no console errors, and legible faces at both 1280px and 390px viewports.
+
+---
+
 ### Phase summary
 
 | Phase | Files | Test driver | Effort |
@@ -257,3 +277,4 @@ Two tabs: host deals 5 → deck count drops by 6 (5 dealt + 1 flipped); discard 
 | 4 | `index.html`, `style.css` | Visual in browser + phone | Large |
 | 5 | `client.js` (+ minor `index.html`) | Full gameplay in 3+ tabs + phone | Large |
 | 6 | `server.js`, `client.js`, `style.css` | 2 tabs in browser | Small |
+| 7 | `cards.js`, `client.js`, `style.css`, `index.html` | 52-card preview grid + 1 tab | Medium |

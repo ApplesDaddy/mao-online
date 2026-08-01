@@ -14,6 +14,7 @@ server.js         # HTTP + Socket.io, room lifecycle, events
 game.js           # deck builder, shuffle, room factory (pure)
 public/index.html # join screen → game screen
 public/style.css  # tanbi kei theme
+public/cards.js   # card face art: pip layouts + court figures (pure, no I/O)
 public/client.js  # socket wiring + DOM rendering
 ```
 
@@ -66,7 +67,7 @@ Name input + room code (Create / Join). Show `room:error` messages inline.
 
 ### Game screen — 4 zones
 1. **Table** (top portrait / center desktop) — deck pile (remaining count) + discard pile: up to 3 most recent cards in a cascading stack, newest on top, slight offset + tilt per layer ("a bit messy", like a real discard pile).
-2. **Hand dock** (bottom) — overlapping fan of own cards: **`<button>` elements**, `aria-label="X of Y"`, decorative suit glyphs `aria-hidden`. Tap/click to play; drag optional.
+2. **Hand dock** (bottom) — overlapping fan of own cards: **`<button>` elements**, `aria-label="Queen of Hearts"`, all face art `aria-hidden`. Tap/click to play; drag optional.
    - Fan rotation: ±20° when ≤10 cards, linearly compress to ±5° at 20+ cards.
    - Overflow: `max-width: 100%` + `overflow-x: auto` — prevents 20+ cards from breaking mobile.
 3. **Players sheet** — searchable, scrollable. Each row: name, card count, **≥44px Penalize `<button>`** (disabled/hidden for self). Host sees **"Deal 3" + "Deal 5"** side-by-side buttons (no modal).
@@ -88,7 +89,7 @@ Name input + room code (Create / Join). Show `room:error` messages inline.
 ## 7. Aesthetic — tanbi kei (耽美): elegant / aristocratic
 - **Palette**: ivory/parchment base, gold-leaf accents, burgundy, deep emerald, ink-navy. `color-scheme: light`; `<meta name="theme-color">` = ivory.
 - **Type**: Google Fonts CDN serif — Cormorant Garamond / Playfair Display (headings), Cinzel (indices/numerals). `font-display: swap`; `<link rel="preconnect">` for `fonts.googleapis.com` + `fonts.gstatic.com`. Tabular-nums on counts.
-- **Cards**: classic French deck — ornamental gold frames, serif indices, suit glyphs, paper-grain.
+- **Cards**: classic French deck rendered as inline SVG (`cards.js`) — standard pip layouts with the lower half inverted, diagonal corner indices, double-headed J/Q/K court figures in framed panels, on card stock with a faint linen grain.
 - **Chrome**: filigree borders, gold rules, ornamental dividers in feed, damask background pattern.
 - **Buttons**: gold-bordered serif; **Penalize** styled wine-red wax-seal — highest-contrast element on screen.
 - **Contrast AA**: ink text on cream; never gold on white for body copy.
