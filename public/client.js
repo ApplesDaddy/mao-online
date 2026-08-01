@@ -168,10 +168,11 @@
 
   // Discard pile: up to 3 cards (newest first) in a slightly messy cascade —
   // like a real discard pile, each layer peeking out with a small tilt.
+  // Offsets are tuned to the enlarged table piles (see #table-zone --cw/--ch).
   const DISCARD_LAYERS = [
     { top: 0, left: 0, deg: 0 },
-    { top: 3, left: 3, deg: 1.5 },
-    { top: 6, left: 6, deg: -2 },
+    { top: 5, left: 5, deg: 1.5 },
+    { top: 10, left: 10, deg: -2 },
   ];
 
   function renderDiscardStack(cards) {

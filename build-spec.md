@@ -66,7 +66,7 @@ All game broadcasts → `io.to(room.id)`. **Never send others' hands** — only 
 Name input + room code (Create / Join). Show `room:error` messages inline.
 
 ### Game screen — 4 zones
-1. **Table** (top portrait / center desktop) — deck pile (remaining count) + discard pile: up to 3 most recent cards in a cascading stack, newest on top, slight offset + tilt per layer ("a bit messy", like a real discard pile).
+1. **Table** (top portrait / center desktop) — deck pile (remaining count) + discard pile: up to 3 most recent cards in a cascading stack, newest on top, slight offset + tilt per layer ("a bit messy", like a real discard pile). Both piles render **larger than hand cards** (`#table-zone` overrides `--cw`/`--ch`, height-capped in `dvh`) — they're the shared focal point for the whole table.
 2. **Hand dock** (bottom) — overlapping fan of own cards: **`<button>` elements**, `aria-label="Queen of Hearts"`, all face art `aria-hidden`. Tap/click to play; drag optional.
    - Fan rotation: ±20° when ≤10 cards, linearly compress to ±5° at 20+ cards.
    - Overflow: `max-width: 100%` + `overflow-x: auto` — prevents 20+ cards from breaking mobile.
